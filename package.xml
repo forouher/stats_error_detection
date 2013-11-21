@@ -1,0 +1,16 @@
+<package>
+  <name>stats_error_detection</name>
+  <version>0.0.1</version>
+  <description>Monitors /statistics for anomalies</description>
+  <maintainer email="forouher@iti.uni-luebeck.de">Dariush Forouher</maintainer>
+
+  <license>BSD</license>
+
+  <author>Dariush Forouher</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>rosgraph_msgs</run_depend>
+
+</package>
