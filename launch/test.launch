@@ -1,0 +1,21 @@
+<launch>
+
+  <param name="enable_statistics" value="true" />
+
+  <node pkg="roscpp_tutorials" type="talker" name="talker1" args="" />
+  <node pkg="roscpp_tutorials" type="talker" name="talker2" args="" />
+
+  <node pkg="topic_tools" type="relay" name="relay1" args="/chatter /b" />
+
+  <node pkg="topic_tools" type="relay" name="relay2a" args="/b /c1" />
+  <node pkg="topic_tools" type="relay" name="relay2b" args="/b /c2" />
+
+  <node pkg="topic_tools" type="relay" name="relay3a" args="/c1 /d" />
+  <node pkg="topic_tools" type="relay" name="relay3b" args="/c2 /d" />
+
+  <node pkg="topic_tools" type="relay" name="relay4" args="/d /e" />
+
+  <node pkg="topic_tools" type="relay" name="listener" args="/e /sink" />
+
+</launch>
+

@@ -47,6 +47,7 @@ from math import isnan
 class ConnectionLimits:
 
     period_min = 10000000000
+    period_mean = 10000000000
     period_var_max = -1000000
     period_max = -10000000
     delay_max = -10000000
@@ -62,59 +63,71 @@ def tree():
 
 store = tree()
 
-BUFFER=1.2
+BUFFER=1.5
 
 def classifier(data, args):
 
-    if not isinstance(store[data.topic][data.node_sub][data.node_pub], ConnectionLimits):
-#	rospy.loginfo("unknown topic %s: %s <-> %s", data.topic,data.node_sub,data.node_pub)
+# todo: check, if topic fails to send stats completely (timer)
+
+    if data.topic.startswith("/statistics"):
 	return
 
-    if isnan(data.stamp_delay_max) or isnan(data.period_max):
+    if not isinstance(store[data.topic][data.node_sub][data.node_pub], ConnectionLimits):
+	rospy.loginfo("unknown topic %s: %s -> %s", data.topic,data.node_pub,data.node_sub)
 	return
 
     c = store[data.topic][data.node_sub][data.node_pub]
 
     error = 0
-    if c.period_min > data.period_mean:
+    if not c.period_mean > data.period_mean:
+	rospy.logerr("topic %s: %s -> %s: error %f > %f", data.topic, data.node_pub, data.node_sub, c.period_mean, data.period_mean)
 	error = 1
-    if c.period_max < data.period_max:
-	error = 1
-    if c.period_var_max < data.period_variance:
-	error = 1
-    if c.delay_max < data.stamp_delay_max:
-	error = 1
-    if c.delay_var_max < data.stamp_delay_variance:
-	error = 1
-    if c.drops_max < data.dropped_msgs:
-	error = 0
+#    if c.period_min > data.period_mean:
+#	error = 1
+#    if not isnan(data.period_max) and c.period_max < data.period_max:
+#	error = 1
+#    if c.period_var_max < data.period_variance:
+#	error = 1
+#    if c.delay_max < data.stamp_delay_max:
+#	error = 1
+#    if not isnan(data.stamp_delay_max) and c.delay_var_max < data.stamp_delay_variance:
+#	error = 1
+#    if c.drops_max < data.dropped_msgs:
+#	error = 0
 
-    if error:
-	rospy.logwarn("error on topic %s: %s <-> %s", data.topic,data.node_sub,data.node_pub)
-	c.p()
+#    if error:
+#	diagnostics error
+#	rospy.logwarn("error on topic %s: %s -> %s", data.topic,data.node_pub,data.node_sub)
+	#c.p()
 
 def training(data, args):
+    if data.topic.startswith("/statistics"):
+	return
+
     if not isinstance(store[data.topic][data.node_sub][data.node_pub], ConnectionLimits):
 	store[data.topic][data.node_sub][data.node_pub] = ConnectionLimits()
-	rospy.loginfo("new topic %s: %s <-> %s", data.topic,data.node_sub,data.node_pub)
+	rospy.loginfo("new topic %s: %s -> %s", data.topic,data.node_pub,data.node_sub)
 
-    if isnan(data.stamp_delay_max) or isnan(data.period_max):
-	return
+#    if isnan(data.stamp_delay_max) or isnan(data.period_max):
+#	return
     
     c = store[data.topic][data.node_sub][data.node_pub]
 
-    if c.period_min >data.period_mean:
-	c.period_min = data.period_mean*BUFFER
-    if c.period_max < data.period_max:
-	c.period_max = data.period_max*BUFFER
-    if c.period_var_max < data.period_variance:
-	c.period_var_max = data.period_variance*BUFFER
-    if c.delay_max < data.stamp_delay_max:
-	c.delay_max = data.stamp_delay_max*BUFFER
-    if c.delay_var_max < data.stamp_delay_variance:
-	c.delay_var_max = data.stamp_delay_variance*BUFFER
-    if c.drops_max < data.dropped_msgs:
-	c.drops_max = data.dropped_msgs*BUFFER
+#    if c.period_min >data.period_mean:
+#	c.period_min = data.period_mean*BUFFER
+    if c.period_mean > data.period_mean:
+	c.period_mean = data.period_mean*BUFFER
+	rospy.logdebug("topic %s: %s -> %s: shortening period_mean to %f", data.topic,data.node_pub,data.node_sub, c.period_mean)
+#    if c.period_max < data.period_max:
+#	c.period_max = data.period_max*BUFFER
+#    if c.period_var_max < data.period_variance:
+#	c.period_var_max = data.period_variance*BUFFER
+#    if c.delay_max < data.stamp_delay_max:
+#	c.delay_max = data.stamp_delay_max*BUFFER
+#    if c.delay_var_max < data.stamp_delay_variance:
+#	c.delay_var_max = data.stamp_delay_variance*BUFFER
+#    if c.drops_max < data.dropped_msgs:
+#	c.drops_max = data.dropped_msgs*BUFFER
 
 if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)

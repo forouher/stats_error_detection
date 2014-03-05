@@ -1,0 +1,19 @@
+<launch>
+
+  <param name="enable_statistics" value="true" />
+  <param name="use_sim_time" value="true" />
+
+  <node pkg="rosbag" type="play" name="player" args="--clock /home/forouher/ros.bags/vslam/iti_data_2013-02-17-10-17-11.bag" />
+
+  <node pkg="topic_tools" type="relay" name="relay1" args="/imu/data /b" />
+
+  <node pkg="topic_tools" type="relay" name="relay2a" args="/b /c1" />
+  <node pkg="topic_tools" type="relay" name="relay2b" args="/b /c2" />
+
+  <node pkg="topic_tools" type="relay" name="relay3a" args="/c1 /d" />
+  <node pkg="topic_tools" type="relay" name="relay3b" args="/c2 /d" />
+
+  <node pkg="topic_tools" type="relay" name="listener" args="/d /sink" />
+
+</launch>
+
