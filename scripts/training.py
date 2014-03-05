@@ -42,6 +42,8 @@ import rospy
 from rosgraph_msgs.msg import TopicStatistics
 import collections
 
+from math import isnan
+
 class ConnectionLimits:
 
     period_min = 10000000000
@@ -51,32 +53,72 @@ class ConnectionLimits:
     delay_var_max = -10000000000
     drops_max = -1000000
 
+    def p(self):
+	rospy.loginfo("%f,%f,%f,%f,%f,%f", self.period_min, self.period_var_max, self.period_max, self.delay_max, self.delay_var_max, self.drops_max)
+
+
 def tree():
     return collections.defaultdict(tree)
 
 store = tree()
 
-def callback(data, args):
+BUFFER=1.2
+
+def classifier(data, args):
+
+    if not isinstance(store[data.topic][data.node_sub][data.node_pub], ConnectionLimits):
+#	rospy.loginfo("unknown topic %s: %s <-> %s", data.topic,data.node_sub,data.node_pub)
+	return
+
+    if isnan(data.stamp_delay_max) or isnan(data.period_max):
+	return
+
+    c = store[data.topic][data.node_sub][data.node_pub]
+
+    error = 0
+    if c.period_min > data.period_mean:
+	error = 1
+    if c.period_max < data.period_max:
+	error = 1
+    if c.period_var_max < data.period_variance:
+	error = 1
+    if c.delay_max < data.stamp_delay_max:
+	error = 1
+    if c.delay_var_max < data.stamp_delay_variance:
+	error = 1
+    if c.drops_max < data.dropped_msgs:
+	error = 0
+
+    if error:
+	rospy.logwarn("error on topic %s: %s <-> %s", data.topic,data.node_sub,data.node_pub)
+	c.p()
+
+def training(data, args):
     if not isinstance(store[data.topic][data.node_sub][data.node_pub], ConnectionLimits):
 	store[data.topic][data.node_sub][data.node_pub] = ConnectionLimits()
 	rospy.loginfo("new topic %s: %s <-> %s", data.topic,data.node_sub,data.node_pub)
+
+    if isnan(data.stamp_delay_max) or isnan(data.period_max):
+	return
     
     c = store[data.topic][data.node_sub][data.node_pub]
+
     if c.period_min >data.period_mean:
-	c.period_min = data.period_mean
+	c.period_min = data.period_mean*BUFFER
     if c.period_max < data.period_max:
-	c.period_max = data.period_max
+	c.period_max = data.period_max*BUFFER
     if c.period_var_max < data.period_variance:
-	c.period_var_max = data.period_variance
+	c.period_var_max = data.period_variance*BUFFER
     if c.delay_max < data.stamp_delay_max:
-	c.delay_max = data.stamp_delay_max
+	c.delay_max = data.stamp_delay_max*BUFFER
     if c.delay_var_max < data.stamp_delay_variance:
-	c.delay_var_max = data.stamp_delay_variance
+	c.delay_var_max = data.stamp_delay_variance*BUFFER
     if c.drops_max < data.dropped_msgs:
-	c.drops_max = data.dropped_msgs
+	c.drops_max = data.dropped_msgs*BUFFER
 
 if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)
-    rospy.Subscriber("/statistics", TopicStatistics, callback, 1)
+    rospy.Subscriber("/statistics", TopicStatistics, classifier, 1)
+    rospy.Subscriber("/statistics_training", TopicStatistics, training, 1)
     rospy.spin()
 
