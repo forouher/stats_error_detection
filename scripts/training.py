@@ -129,6 +129,8 @@ def training(data, args):
 #    if c.drops_max < data.dropped_msgs:
 #	c.drops_max = data.dropped_msgs*BUFFER
 
+    store[data.topic][data.node_sub][data.node_pub] = c
+
 if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)
     rospy.Subscriber("/statistics", TopicStatistics, classifier, 1)
