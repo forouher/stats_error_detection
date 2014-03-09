@@ -1,0 +1,6 @@
+analyzers:
+  teleop:
+    type: GenericAnalyzer
+    path: Topics
+    startswith: [ '/' ]
+    num_items: 9
