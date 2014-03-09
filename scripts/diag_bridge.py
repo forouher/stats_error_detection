@@ -42,6 +42,7 @@ import rospy
 from rosgraph_msgs.msg import TopicStatistics
 import collections
 
+from diagnostic_msgs.msg import DiagnosticArray
 from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
@@ -71,13 +72,16 @@ def publishDiagnostics(c):
     d.values.append(KeyValue("period", str(c.last_stats.period_mean)))
     if not isnan(c.last_stats.stamp_delay_mean):
 	d.values.append(KeyValue("delay", str(c.last_stats.stamp_delay_mean)))
-    pub.publish(d)
+
+    msg = DiagnosticArray()
+    msg.header.stamp = rospy.Time.now()
+    msg.status.append(d)
+    pub.publish(msg)
 
 def newstats(data, args):
 
     if data.topic.startswith("/statistics") or data.topic.startswith("/diagnostics"):
 	return
-
 
     if not isinstance(store[data.topic][data.node_sub][data.node_pub], Connection):
 	store[data.topic][data.node_sub][data.node_pub] = Connection()
@@ -95,7 +99,7 @@ def newstats(data, args):
 
 if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)
-    pub = rospy.Publisher('/diagnostics', DiagnosticStatus)
+    pub = rospy.Publisher('/diagnostics', DiagnosticArray)
     rospy.Subscriber("/statistics", TopicStatistics, newstats, 1)
     rospy.spin()
 
