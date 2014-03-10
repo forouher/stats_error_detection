@@ -94,7 +94,7 @@ def publishDiagnostics(c):
 
 def newstats(data, args):
 
-    if data.topic.startswith("/statistics") or data.topic.startswith("/diagnostics"):
+    if data.topic.startswith("/statistics") or data.topic.startswith("/diagnostics") or data.topic.endswith("parameter_updates"):
 	return
 
     if not isinstance(store[data.topic][data.node_sub][data.node_pub], Connection):

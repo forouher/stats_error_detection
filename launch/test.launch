@@ -2,8 +2,8 @@
 
   <param name="enable_statistics" value="true" />
 
-  <node pkg="roscpp_tutorials" type="talker" name="talker1" args="" />
-  <node pkg="roscpp_tutorials" type="talker" name="talker2" args="" />
+  <node pkg="stats_error_detection" type="talker.py" name="talker1" args="/chatter" />
+  <node pkg="stats_error_detection" type="talker.py" name="talker2" args="/chatter" />
 
   <node pkg="stats_error_detection" type="relay.py" name="relay1" args="/chatter /b" />
 
