@@ -5,25 +5,26 @@
   <node pkg="roscpp_tutorials" type="talker" name="talker1" args="" />
   <node pkg="roscpp_tutorials" type="talker" name="talker2" args="" />
 
-  <node pkg="topic_tools" type="relay" name="relay1" args="/chatter /b" />
+  <node pkg="stats_error_detection" type="relay.py" name="relay1" args="/chatter /b" />
 
-  <node pkg="topic_tools" type="relay" name="relay2a" args="/b /c1" />
-  <node pkg="topic_tools" type="relay" name="relay2b" args="/b /c2" />
+  <node pkg="stats_error_detection" type="relay.py" name="relay2a" args="/b /c1" />
+  <node pkg="stats_error_detection" type="relay.py" name="relay2b" args="/b /c2" />
 
-  <node pkg="topic_tools" type="relay" name="relay3a" args="/c1 /d" />
-  <node pkg="topic_tools" type="relay" name="relay3b" args="/c2 /d" />
+  <node pkg="stats_error_detection" type="relay.py" name="relay3a" args="/c1 /d" />
+  <node pkg="stats_error_detection" type="relay.py" name="relay3b" args="/c2 /d" />
 
-  <node pkg="topic_tools" type="relay" name="relay4" args="/d /e" output="screen" />
+  <node pkg="stats_error_detection" type="relay.py" name="relay4" args="/d /e" />
 
-  <node pkg="topic_tools" type="relay" name="listener" args="/e /sink" output="screen" />
+  <node pkg="stats_error_detection" type="relay.py" name="listener" args="/e /sink" output="screen"  />
 
   <node name="aggregator" pkg="diagnostic_aggregator" type="aggregator_node">
     <rosparam file="$(find stats_error_detection)/analyzer.yaml"/>
   </node>
 
-  <node name="monitor" pkg="rqt_robot_monitor" type="rqt_robot_monitor" respawn="true" />
+  <node name="monitor" pkg="rqt_robot_monitor" type="rqt_robot_monitor" />
+  <node name="monitor2" pkg="rqt_profiler" type="rqt_profiler" />
 
-  <node name="diag_bridge" pkg="stats_error_detection" type="diag_bridge.py" respawn="false" output="screen" />
+  <node name="diag_bridge" pkg="stats_error_detection" type="diag_bridge.py" respawn="false" />
 
 </launch>
 

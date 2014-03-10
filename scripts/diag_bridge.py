@@ -61,17 +61,31 @@ store = tree()
 def publishDiagnostics(c):
     d = DiagnosticStatus()
     d.name = c.last_stats.topic+" ("+c.last_stats.node_pub+" -> "+c.last_stats.node_sub+")"
-    if c.last_stats.error:
-	d.level = DiagnosticStatus.ERROR
-	d.message = "Change detection detected an anomaly."
+    if (c.last_stats.status & TopicStatistics.STATUS_ERROR_PERIOD) and (c.last_stats.status & TopicStatistics.STATUS_ERROR_DELAY):
+	d.level = DiagnosticStatus.WARN
+	d.message = "Period and Delay changed!."
+    elif c.last_stats.status & TopicStatistics.STATUS_ERROR_PERIOD:
+	d.level = DiagnosticStatus.WARN
+	d.message = "Period changed!"
+    elif c.last_stats.status & TopicStatistics.STATUS_ERROR_DELAY:
+	d.level = DiagnosticStatus.WARN
+	d.message = "Delay changed!"
+    elif c.last_stats.status & TopicStatistics.STATUS_OK:
+	d.level = DiagnosticStatus.OK
+	d.message = "Good."
     else:
 	d.level = DiagnosticStatus.OK
-	d.message = "Connection looks typical."
+	d.message = "Unknown status."
 
     d.hardware_id = c.last_stats.topic
     d.values.append(KeyValue("period", str(c.last_stats.period_mean)))
     if not isnan(c.last_stats.stamp_delay_mean):
 	d.values.append(KeyValue("delay", str(c.last_stats.stamp_delay_mean)))
+
+    d.values.append(KeyValue("e_period", str(c.last_stats.e_period)))
+    d.values.append(KeyValue("L_period", str(c.last_stats.L_period)))
+    d.values.append(KeyValue("e_delay", str(c.last_stats.e_delay)))
+    d.values.append(KeyValue("L_delay", str(c.last_stats.L_delay)))
 
     msg = DiagnosticArray()
     msg.header.stamp = rospy.Time.now()
@@ -91,7 +105,7 @@ def newstats(data, args):
 
     store[data.topic][data.node_sub][data.node_pub].last_stats = data
 
-    if not data.error:
+    if data.status == TopicStatistics.STATUS_OK:
 	store[data.topic][data.node_sub][data.node_pub].last_good_stats = data
     
     publishDiagnostics(store[data.topic][data.node_sub][data.node_pub])
