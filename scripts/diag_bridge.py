@@ -50,42 +50,50 @@ from math import isnan
 
 class Connection:
 
-    last_good_stats = 0;
-    last_stats = 0;
+    latest_stats = 0;
+    previous_stats = 0;
 
 def tree():
     return collections.defaultdict(tree)
 
 store = tree()
 
+def isStablePeriod(c):
+    return c.latest_stats.changes_period == c.previous_stats.changes_period
+
+def isStableDelay(c):
+    return c.latest_stats.changes_delay == c.previous_stats.changes_delay
+
 def publishDiagnostics(c):
     d = DiagnosticStatus()
-    d.name = c.last_stats.topic+" ("+c.last_stats.node_pub+" -> "+c.last_stats.node_sub+")"
-    if (c.last_stats.status & TopicStatistics.STATUS_ERROR_PERIOD) and (c.last_stats.status & TopicStatistics.STATUS_ERROR_DELAY):
+
+    if c.previous_stats==0:
+	return
+
+    d.name = c.latest_stats.topic+" ("+c.latest_stats.node_pub+" -> "+c.latest_stats.node_sub+")"
+
+    if not isStablePeriod(c) and not isStableDelay(c):
 	d.level = DiagnosticStatus.WARN
 	d.message = "Period and Delay changed!."
-    elif c.last_stats.status & TopicStatistics.STATUS_ERROR_PERIOD:
+    elif not isStablePeriod(c):
 	d.level = DiagnosticStatus.WARN
 	d.message = "Period changed!"
-    elif c.last_stats.status & TopicStatistics.STATUS_ERROR_DELAY:
+    elif not isStableDelay(c):
 	d.level = DiagnosticStatus.WARN
 	d.message = "Delay changed!"
-    elif c.last_stats.status & TopicStatistics.STATUS_OK:
-	d.level = DiagnosticStatus.OK
-	d.message = "Good."
     else:
 	d.level = DiagnosticStatus.OK
-	d.message = "Unknown status."
+	d.message = "No recent changes observed."
 
-    d.hardware_id = c.last_stats.topic
-    d.values.append(KeyValue("period", str(c.last_stats.period_mean)))
-    if not isnan(c.last_stats.stamp_delay_mean):
-	d.values.append(KeyValue("delay", str(c.last_stats.stamp_delay_mean)))
+    d.hardware_id = c.latest_stats.topic
+    d.values.append(KeyValue("period", str(c.latest_stats.period_mean)))
+    if not isnan(c.latest_stats.stamp_delay_mean):
+	d.values.append(KeyValue("delay", str(c.latest_stats.stamp_delay_mean)))
 
-    d.values.append(KeyValue("e_period", str(c.last_stats.e_period)))
-    d.values.append(KeyValue("L_period", str(c.last_stats.L_period)))
-    d.values.append(KeyValue("e_delay", str(c.last_stats.e_delay)))
-    d.values.append(KeyValue("L_delay", str(c.last_stats.L_delay)))
+    d.values.append(KeyValue("e_period", str(c.latest_stats.e_period)))
+    d.values.append(KeyValue("L_period", str(c.latest_stats.L_period)))
+    d.values.append(KeyValue("e_delay", str(c.latest_stats.e_delay)))
+    d.values.append(KeyValue("L_delay", str(c.latest_stats.L_delay)))
 
     msg = DiagnosticArray()
     msg.header.stamp = rospy.Time.now()
@@ -103,13 +111,10 @@ def newstats(data, args):
 
     # assume that stats are published at least a second
 
-    store[data.topic][data.node_sub][data.node_pub].last_stats = data
+    store[data.topic][data.node_sub][data.node_pub].previous_stats = store[data.topic][data.node_sub][data.node_pub].latest_stats
+    store[data.topic][data.node_sub][data.node_pub].latest_stats = data
 
-    if data.status == TopicStatistics.STATUS_OK:
-	store[data.topic][data.node_sub][data.node_pub].last_good_stats = data
-    
     publishDiagnostics(store[data.topic][data.node_sub][data.node_pub])
-
 
 if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)

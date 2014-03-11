@@ -3,7 +3,6 @@
   <param name="enable_statistics" value="true" />
 
   <node pkg="stats_error_detection" type="talker.py" name="talker1" args="/chatter" />
-  <node pkg="stats_error_detection" type="talker.py" name="talker2" args="/chatter" />
 
   <node pkg="stats_error_detection" type="relay.py" name="relay1" args="/chatter /b" />
 
@@ -13,10 +12,10 @@
   <node pkg="stats_error_detection" type="relay.py" name="relay3a" args="/c1 /d" />
   <node pkg="stats_error_detection" type="relay.py" name="relay3b" args="/c2 /d" />
 
-  <node pkg="stats_error_detection" type="relay.py" name="relay4" args="/d /e" />
+<!--  <node pkg="stats_error_detection" type="relay.py" name="relay4" args="/d /e" /> 
 
   <node pkg="stats_error_detection" type="relay.py" name="listener" args="/e /sink" output="screen"  />
-
+-->
   <node name="aggregator" pkg="diagnostic_aggregator" type="aggregator_node">
     <rosparam file="$(find stats_error_detection)/analyzer.yaml"/>
   </node>
