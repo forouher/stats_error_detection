@@ -100,8 +100,6 @@ def publishDiagnostics(c):
 
     d.values.append(KeyValue("change events period", str(c.stats[-1].changes_period)))
     d.values.append(KeyValue("change events delay", str(c.stats[-1].changes_delay)))
-    d.values.append(KeyValue("change prev events period", str(c.stats[-2].changes_period)))
-    d.values.append(KeyValue("change prev events delay", str(c.stats[-2].changes_delay)))
 
     msg = DiagnosticArray()
     msg.header.stamp = rospy.Time.now()
