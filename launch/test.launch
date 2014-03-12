@@ -23,7 +23,7 @@
   <node name="monitor" pkg="rqt_robot_monitor" type="rqt_robot_monitor" />
   <node name="monitor2" pkg="rqt_profiler" type="rqt_profiler" />
 
-  <node name="diag_bridge" pkg="stats_error_detection" type="diag_bridge.py" respawn="false" />
+  <node name="diag_bridge" pkg="stats_error_detection" type="diag_bridge.py" respawn="false" output="screen"  />
 
 </launch>
 

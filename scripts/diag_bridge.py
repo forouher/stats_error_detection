@@ -41,6 +41,7 @@ import roslib; roslib.load_manifest(PKG)
 import rospy
 from rosgraph_msgs.msg import TopicStatistics
 import collections
+import copy
 
 from diagnostic_msgs.msg import DiagnosticArray
 from diagnostic_msgs.msg import DiagnosticStatus
@@ -50,50 +51,57 @@ from math import isnan
 
 class Connection:
 
-    latest_stats = 0;
-    previous_stats = 0;
+    def __init__(self):
+	self.stats = [0]*60
 
 def tree():
     return collections.defaultdict(tree)
 
 store = tree()
 
-def isStablePeriod(c):
-    return c.latest_stats.changes_period == c.previous_stats.changes_period
-
-def isStableDelay(c):
-    return c.latest_stats.changes_delay == c.previous_stats.changes_delay
-
 def publishDiagnostics(c):
     d = DiagnosticStatus()
 
-    if c.previous_stats==0:
+    if c.stats[-2]==0:
 	return
 
-    d.name = c.latest_stats.topic+" ("+c.latest_stats.node_pub+" -> "+c.latest_stats.node_sub+")"
+    d.name = c.stats[-1].topic+" ("+c.stats[-1].node_pub+" -> "+c.stats[-1].node_sub+")"
 
-    if not isStablePeriod(c) and not isStableDelay(c):
+    if c.stats[-1].changes_period > c.stats[-2].changes_period and c.stats[-1].changes_delay > c.stats[-2].changes_delay:
 	d.level = DiagnosticStatus.WARN
 	d.message = "Period and Delay changed!."
-    elif not isStablePeriod(c):
+    elif c.stats[-1].changes_period > c.stats[-2].changes_period:
 	d.level = DiagnosticStatus.WARN
 	d.message = "Period changed!"
-    elif not isStableDelay(c):
+    elif c.stats[-1].changes_delay > c.stats[-2].changes_delay:
 	d.level = DiagnosticStatus.WARN
 	d.message = "Delay changed!"
     else:
 	d.level = DiagnosticStatus.OK
 	d.message = "No recent changes observed."
 
-    d.hardware_id = c.latest_stats.topic
-    d.values.append(KeyValue("period", str(c.latest_stats.period_mean)))
-    if not isnan(c.latest_stats.stamp_delay_mean):
-	d.values.append(KeyValue("delay", str(c.latest_stats.stamp_delay_mean)))
+    if not c.stats[0]==0:
+	old = c.stats[0]
+	new = c.stats[-1]
+	relax = 2
+	if old.changes_period+relax < new.changes_period or old.changes_delay+relax < new.changes_delay:
+	    d.level = DiagnosticStatus.ERROR
+	    d.message = "Topic is unstable!"
 
-    d.values.append(KeyValue("e_period", str(c.latest_stats.e_period)))
-    d.values.append(KeyValue("L_period", str(c.latest_stats.L_period)))
-    d.values.append(KeyValue("e_delay", str(c.latest_stats.e_delay)))
-    d.values.append(KeyValue("L_delay", str(c.latest_stats.L_delay)))
+    d.hardware_id = c.stats[-1].topic
+    d.values.append(KeyValue("period", str(c.stats[-1].period_mean)))
+    if not isnan(c.stats[-1].stamp_delay_mean):
+	d.values.append(KeyValue("delay", str(c.stats[-1].stamp_delay_mean)))
+
+    d.values.append(KeyValue("e_period", str(c.stats[-1].e_period)))
+    d.values.append(KeyValue("L_period", str(c.stats[-1].L_period)))
+    d.values.append(KeyValue("e_delay", str(c.stats[-1].e_delay)))
+    d.values.append(KeyValue("L_delay", str(c.stats[-1].L_delay)))
+
+    d.values.append(KeyValue("change events period", str(c.stats[-1].changes_period)))
+    d.values.append(KeyValue("change events delay", str(c.stats[-1].changes_delay)))
+    d.values.append(KeyValue("change prev events period", str(c.stats[-2].changes_period)))
+    d.values.append(KeyValue("change prev events delay", str(c.stats[-2].changes_delay)))
 
     msg = DiagnosticArray()
     msg.header.stamp = rospy.Time.now()
@@ -111,8 +119,8 @@ def newstats(data, args):
 
     # assume that stats are published at least a second
 
-    store[data.topic][data.node_sub][data.node_pub].previous_stats = store[data.topic][data.node_sub][data.node_pub].latest_stats
-    store[data.topic][data.node_sub][data.node_pub].latest_stats = data
+    store[data.topic][data.node_sub][data.node_pub].stats.pop(0)
+    store[data.topic][data.node_sub][data.node_pub].stats.append(copy.deepcopy(data))
 
     publishDiagnostics(store[data.topic][data.node_sub][data.node_pub])
 
