@@ -111,6 +111,9 @@ def newstats(data, args):
     if data.topic.startswith("/statistics") or data.topic.startswith("/diagnostics") or data.topic.endswith("parameter_updates"):
 	return
 
+    if data.topic.endswith("camera_info") or data.topic.startswith("/tf"):
+	return
+
     if not isinstance(store[data.topic][data.node_sub][data.node_pub], Connection):
 	store[data.topic][data.node_sub][data.node_pub] = Connection()
 	rospy.loginfo("new topic %s: %s -> %s", data.topic,data.node_pub,data.node_sub)

@@ -31,7 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-NAME = 'relay'
+NAME = 'filter'
 
 import sys
 
@@ -40,32 +40,15 @@ import roslib; roslib.load_manifest(PKG)
 import sys
 
 import rospy
-from sensor_msgs.msg import PointCloud2
+from rosgraph_msgs.msg import TopicStatistics
 
-from dynamic_reconfigure.server import Server
-from stats_error_detection.cfg import TalkerConfig
-
-period = 0.1
-delay = 0.01
-
-def callback(config, level):
-    global period
-    global delay
-    print "callback"
-    if config['period']>0:
-	period = config['period']
-    if config['delay']>0:
-	delay = config['delay']
-    return config
+def cb(msg, args):
+    if msg.topic == sys.argv[3]:
+        pub.publish(msg)
 
 if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)
-    pub = rospy.Publisher(sys.argv[1], PointCloud2)
-    srv = Server(TalkerConfig, callback)
-    print "init done"
-    while not rospy.is_shutdown():
-	msg = PointCloud2()
-	msg.header.stamp = rospy.Time.now() - rospy.Duration(delay)
-        pub.publish(msg)
-        rospy.sleep(period)
+    pub = rospy.Publisher(sys.argv[2],TopicStatistics)
+    rospy.Subscriber(sys.argv[1], TopicStatistics, cb, 1)
+    rospy.spin()
 

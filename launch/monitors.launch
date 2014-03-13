@@ -1,0 +1,17 @@
+<launch>
+
+  <param name="enable_statistics" value="true" />
+
+    <node pkg="stats_error_detection" type="filter.py" name="foofighter" args="/statistics_dbg /statistics_camera /camera/depth/points" output="screen"  />
+
+  <node name="aggregator" pkg="diagnostic_aggregator" type="aggregator_node">
+    <rosparam file="$(find stats_error_detection)/analyzer.yaml"/>
+  </node>
+
+  <node name="monitor" pkg="rqt_robot_monitor" type="rqt_robot_monitor" output="screen"  />
+  <node name="monitor2" pkg="rqt_profiler" type="rqt_profiler" output="screen"  />
+
+  <node name="diag_bridge" pkg="stats_error_detection" type="diag_bridge.py" respawn="false" output="screen"  />
+
+</launch>
+

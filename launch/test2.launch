@@ -3,17 +3,21 @@
   <param name="enable_statistics" value="true" />
   <param name="use_sim_time" value="true" />
 
-  <node pkg="rosbag" type="play" name="player" args="--clock /home/forouher/ros.bags/vslam/iti_data_2013-02-17-10-17-11.bag" />
+  <node pkg="rosbag" type="play" name="player" args="--clock -l /home/forouher/ros.bags/marvin/iti_data_2013-11-06-15-42-52.bag" />
 
-  <node pkg="topic_tools" type="relay" name="relay1" args="/imu/data /b" />
+  <node pkg="stats_error_detection" type="relay.py" name="foo" args="/cameraLeft/depth/filter/3_obstacles_filtered /a" />
+  <node pkg="stats_error_detection" type="relayImu.py" name="foo2" args="/imu /b" />
+  <node pkg="stats_error_detection" type="relayOdom.py" name="foo3" args="/robot_pose_ekf/odom /c" />
 
-  <node pkg="topic_tools" type="relay" name="relay2a" args="/b /c1" />
-  <node pkg="topic_tools" type="relay" name="relay2b" args="/b /c2" />
+  <node name="aggregator" pkg="diagnostic_aggregator" type="aggregator_node">
+    <rosparam file="$(find stats_error_detection)/analyzer.yaml"/>
+  </node>
 
-  <node pkg="topic_tools" type="relay" name="relay3a" args="/c1 /d" />
-  <node pkg="topic_tools" type="relay" name="relay3b" args="/c2 /d" />
+  <node name="monitor" pkg="rqt_robot_monitor" type="rqt_robot_monitor" />
+  <node name="monitor2" pkg="rqt_profiler" type="rqt_profiler" />
 
-  <node pkg="topic_tools" type="relay" name="listener" args="/d /sink" />
+  <node name="diag_bridge" pkg="stats_error_detection" type="diag_bridge.py" respawn="false" output="screen"  />
+
 
 </launch>
 

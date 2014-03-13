@@ -5,11 +5,7 @@
     <include file="$(find openni2_launch)/launch/openni2.launch">
     </include>
 
-    <node pkg="nodelet" type="nodelet" name="voxelgrid" args="standalone pcl/VoxelGrid">
-        <remap from="~input" to="/camera/depth/points" />
-        <remap from="~output" to="voxelgrid" />
-        <rosparam file="$(find stats_error_detection)/voxel_filter.yaml" command="load" />
-    </node>
+    <node pkg="stats_error_detection" type="relay.py" name="foo" args="/camera/depth/points /b" />
 
 </launch>
 
